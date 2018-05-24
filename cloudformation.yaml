@@ -2,7 +2,9 @@ AWSTemplateFormatVersion : "2010-09-09"
 Description : "A Cloudformation template for generating static site hosting using S3, Cloud Front, ACM, and R53"
 Parameters:
   DomainName:
-    Description: "The domain name for the website you're setting up."
+    Description: "The domain name of a hosted zone within Route 53. Will be used for the website you're deploying."
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: "Must be a valid domain name (e.g. example.com)."
     Type: String
 Resources:
   SiteBucket:
@@ -10,19 +12,13 @@ Resources:
     DependsOn: LogBucket
     Properties:
       AccessControl: "PublicRead"
-      BucketName: !Join
-        - '-'
-        - - !Ref DomainName
-          - "cdn-bucket"
+      BucketName: !Join [ '-', [!Ref DomainName, "cdn"]]
       WebsiteConfiguration:
         ErrorDocument: "404.html"
         IndexDocument: "index.html"
       
       LoggingConfiguration:
-        DestinationBucketName: !Join
-          - '-'
-          - - !Ref DomainName
-            - "log"
+        DestinationBucketName: !Join [ '-', [!Ref DomainName, "log"]]
         LogFilePrefix: !Ref DomainName
       Tags:
       - Key: "static-site"
@@ -32,30 +28,20 @@ Resources:
     Type: "AWS::S3::BucketPolicy"
     Properties:
       PolicyDocument:
-        Id: !Join
-          - '-'
-          - - !Ref DomainName
-            - "policy"
+        Id: !Join [ '-', [!Ref DomainName,  "policy"]]
         Version: "2012-10-17"
         Statement:
           - Sid: "PublicReadForGetBucketObjects"
             Effect: "Allow"
             Principal: "*"
             Action: "s3:GetObject"
-            Resource: !Join
-              - ''
-              - - "arn:aws:s3:::"
-                - !Ref SiteBucket
-                - "/*"
+            Resource: !Join [ '', ["arn:aws:s3:::", !Ref SiteBucket, "/*"]]
       Bucket: !Ref SiteBucket
   LogBucket:
     Type: "AWS::S3::Bucket"
     Properties:
       AccessControl: LogDeliveryWrite
-      BucketName: !Join
-        - '-'
-        - - !Ref DomainName
-          - "log"
+      BucketName: !Join [ '-', [!Ref DomainName,  "log"]]
       Tags:
       - Key: "static-site"
         Value: !Ref DomainName
@@ -133,11 +119,8 @@ Resources:
   MyRecordSetGroup:
     Type: "AWS::Route53::RecordSetGroup"
     Properties:
-      Comment: "Record set group for static site" #TODO include domain info here
-      HostedZoneName: !Join
-        - ''
-        - - !Ref DomainName
-          - '.'
+      Comment: "Record set group for static site domain"
+      HostedZoneName: !Join [ '', [!Ref DomainName, '.']]
       RecordSets:
       - AliasTarget:
           DNSName: !GetAtt CFDistro.DomainName
