@@ -1,3 +1,0 @@
-[submodule "aws-demo/themes/ananke"]
-	path = aws-demo/themes/ananke
-	url = https://github.com/budparr/gohugo-theme-ananke.git
