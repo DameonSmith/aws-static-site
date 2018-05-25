@@ -65,7 +65,7 @@ Resources:
           - !Ref DomainName
           - !Sub
             - www.${Domain}
-            - { Domain: !Ref DomainName} # Todo make this better
+            - { Domain: !Ref DomainName} 
         CustomErrorResponses:
           - ErrorCode: 403
             ResponsePagePath: "/404.html"
